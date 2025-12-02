@@ -2,10 +2,12 @@ version: "3.9"
 
 services:
   app:
-    image: ${DOCKERHUB_USER}/tasks-api:${IMAGE_TAG}
+    image: ${DOCKERHUB_USER}/meu-gerenciador:${IMAGE_TAG}
     ports:
       - "5000:5000"
-    env_file: .env
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      IMAGE_TAG: ${IMAGE_TAG}
     depends_on:
       - db
     networks:
