@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       # -------------------------
       # Checkout do Código
       # -------------------------
@@ -40,7 +41,6 @@ jobs:
             -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
             --load \
             .
-
 
       # -------------------------
       # Push para o Docker Hub
@@ -74,7 +74,7 @@ jobs:
 
             cd ~/
 
-            # Para e remove containers antigos
+            # Para e remove containers antigos (se existirem)
             docker compose -f docker-compose.prod.yml down || true
 
             # Baixar imagem nova
@@ -86,4 +86,3 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
-
