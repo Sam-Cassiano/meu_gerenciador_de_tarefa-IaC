@@ -22,12 +22,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # -------------------------
-      # Build padrão
-      # -------------------------
-      - name: Build Docker image (default)
-        run: docker buildx build -f app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} --platform linux/amd64 --load app
-
-      # -------------------------
       # Build com contexto absoluto
       # -------------------------
       - name: Build Docker image (context path)
@@ -65,3 +59,4 @@ jobs:
             docker compose -f docker-compose.prod.yml down || true
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
             IMAGE_TAG=${{ github.sha }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
+
