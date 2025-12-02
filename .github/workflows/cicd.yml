@@ -24,9 +24,9 @@ jobs:
       # -------------------------
       # Build com --file
       # -------------------------
-      - name: Build Docker image (explicit Dockerfile)
-        run: docker buildx build --platform linux/amd64 -f ./app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:file-test --load ./app
-
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA} .
+        
       # -------------------------
       # Build e push direto
       # -------------------------
@@ -53,5 +53,6 @@ jobs:
             docker compose -f docker-compose.prod.yml down || true
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
             IMAGE_TAG=${{ github.sha }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
+
 
 
