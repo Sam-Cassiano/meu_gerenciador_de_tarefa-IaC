@@ -9,36 +9,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------------
-      # Checkout do código
-      # ---------------------
+      # -------------------------
+      # Checkout do Código
+      # -------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # ---------------------
+      # -------------------------
       # Login no Docker Hub
-      # ---------------------
+      # -------------------------
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ---------------------
-      # Build da imagem
-      # ---------------------
-      - name: Build Docker image
-        run: docker buildx build -t ${{ secrets.DOCKERHUB_USER }}/tasks-api:${{ github.sha }} .
+      # -------------------------
+      # Configurar Buildx
+      # -------------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # ---------------------
+      # -------------------------
+      # Build da Imagem
+      # -------------------------
+      - name: Build Docker image
+        run: docker buildx build \
+          --platform linux/amd64 \
+          -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+          --load .
+
+      # -------------------------
       # Push para o Docker Hub
-      # ---------------------
+      # -------------------------
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
 
-      # ---------------------
-      # Copiar docker-compose.prod.yml para o servidor
-      # ---------------------
+      # -------------------------
+      # Copiar docker-compose para servidor
+      # -------------------------
       - name: Copy docker-compose.prod.yml to server
         uses: appleboy/scp-action@v0.1.4
         with:
@@ -48,9 +57,9 @@ jobs:
           source: "docker-compose.prod.yml"
           target: "~/"
 
-      # ---------------------
-      # Deploy no servidor
-      # ---------------------
+      # -------------------------
+      # Deploy no Servidor
+      # -------------------------
       - name: Deploy on server
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -60,14 +69,17 @@ jobs:
           script: |
             echo "🔥 Atualizando deploy..."
 
+            cd ~/
+
             # Para e remove containers antigos
             docker compose -f docker-compose.prod.yml down || true
 
-            # Puxar imagem nova
+            # Baixar imagem nova
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
 
-            # Sobe os serviços
-            IMAGE_TAG=${{ github.sha }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
+            # Subir serviços com nova imagem
+            IMAGE_TAG=${{ github.sha }} \
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
-
