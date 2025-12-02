@@ -4,85 +4,76 @@ on:
   push:
     branches: ["main"]
 
+permissions:
+  contents: read
+  packages: write   # necessário se usar GitHub Container Registry (opcional)
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-
       # -------------------------
-      # Checkout do Código
+      # 1. Checkout do código
       # -------------------------
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # -------------------------
-      # Login no Docker Hub
+      # 2. Login no Docker Hub
       # -------------------------
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # -------------------------
-      # Configurar Buildx
+      # 3. Build + Push da imagem (tudo em um passo só)
       # -------------------------
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       # -------------------------
-      # Build da Imagem (CORRIGIDO)
-      # -------------------------
-      - name: Build Docker image
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
-            --load \
-            .
-
-      # -------------------------
-      # Push para o Docker Hub
-      # -------------------------
-      - name: Push image to Docker Hub
-        run: docker push ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
-
-      # -------------------------
-      # Copiar docker-compose para servidor
+      # 4. Copiar docker-compose.prod.yml para o servidor
       # -------------------------
       - name: Copy docker-compose.prod.yml to server
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.prod.yml"
-          target: "~/"
+          target: "~/meu-gerenciador/"
 
       # -------------------------
-      # Deploy no Servidor
+      # 5. Deploy remoto (pull + restart)
       # -------------------------
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v0.1.10
+      - name: Deploy on remote server
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "🔥 Atualizando deploy..."
+            echo "Atualizando deploy..."
+            cd ~/meu-gerenciador
 
-            cd ~/
-
-            # Para e remove containers antigos (se existirem)
+            # Para os containers antigos
             docker compose -f docker-compose.prod.yml down || true
 
-            # Baixar imagem nova
+            # Baixa a nova imagem
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
 
-            # Subir serviços com nova imagem
+            # Sobe novamente com as variáveis de ambiente
             IMAGE_TAG=${{ github.sha }} \
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
 
-            echo "🚀 Deploy finalizado!"
+            echo "Deploy concluído com sucesso!"
