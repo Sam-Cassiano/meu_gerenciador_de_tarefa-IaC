@@ -1,0 +1,73 @@
+# ====================================
+# Python
+# ====================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env.bak/
+.env.local
+
+# ====================================
+# Environment / Config
+# ====================================
+.env
+*.env
+.env.prod
+
+# ====================================
+# Docker
+# ====================================
+*.pid
+*.log
+docker-compose.override.yml
+db_data/
+tmp/
+.cache/
+
+# ====================================
+# IDE / Editor
+# ====================================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+*.iml
+
+# ====================================
+# Bytecode / Cache
+# ====================================
+*.mypy_cache/
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# ====================================
+# Build / Distribution
+# ====================================
+dist/
+build/
+*.egg-info/
+
+# ====================================
+# Terraform (NUNCA versionar estado)
+# ====================================
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+terraform/terraform.tfstate.backup
+terraform/tfplan
+terraform/*.tfplan
+
+# ====================================
+# Outros
+# ====================================
+*.bak
