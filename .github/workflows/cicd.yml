@@ -31,7 +31,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # -------------------------
-      # Build da Imagem
+      # Build da Imagem (CORRIGIDO)
       # -------------------------
       - name: Build Docker image
         run: |
