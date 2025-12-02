@@ -4,88 +4,85 @@ on:
   push:
     branches: ["main"]
 
-permissions:
-  contents: read
-  packages: write   # Opcional, mas bom para caches no GitHub
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # -------------------------
-      # 1. Checkout do código
-      # -------------------------
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       # -------------------------
-      # 2. Login no Docker Hub
+      # Checkout do Código
+      # -------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # -------------------------
+      # Login no Docker Hub
       # -------------------------
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # -------------------------
-      # 3. Configurar Buildx com driver docker-container (corrige o cache!)
+      # Configurar Buildx
       # -------------------------
       - name: Set up Docker Buildx
-        id: buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker-container  # ← ESSA É A CORREÇÃO PRINCIPAL!
-          driver-opts: |
-            image=moby/buildkit:stable
-            network=host
 
       # -------------------------
-      # 4. Build + Push da imagem (com cache GHA funcionando)
+      # Build da Imagem (CORRIGIDO)
       # -------------------------
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+            --load \
+            .
 
       # -------------------------
-      # 5. Copiar docker-compose.prod.yml para o servidor
+      # Push para o Docker Hub
+      # -------------------------
+      - name: Push image to Docker Hub
+        run: docker push ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
+
+      # -------------------------
+      # Copiar docker-compose para servidor
       # -------------------------
       - name: Copy docker-compose.prod.yml to server
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.prod.yml"
-          target: "~/meu-gerenciador/"
+          target: "~/"
 
       # -------------------------
-      # 6. Deploy remoto (pull + restart)
+      # Deploy no Servidor
       # -------------------------
-      - name: Deploy on remote server
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "🔥 Atualizando deploy..."
-            cd ~/meu-gerenciador || mkdir -p ~/meu-gerenciador && cd ~/meu-gerenciador
 
-            # Para os containers antigos
+            cd ~/
+
+            # Para e remove containers antigos (se existirem)
             docker compose -f docker-compose.prod.yml down || true
 
-            # Baixa a nova imagem
+            # Baixar imagem nova
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
 
-            # Sobe novamente com as variáveis de ambiente
+            # Subir serviços com nova imagem
             IMAGE_TAG=${{ github.sha }} \
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
 
-            echo "🚀 Deploy concluído com sucesso!"
+            echo "🚀 Deploy finalizado!"
