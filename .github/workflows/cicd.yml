@@ -22,13 +22,12 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            -f app/Dockerfile \
-            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
-            --load \
-            app
+        run: docker buildx build \
+              --platform linux/amd64 \
+              -f app/Dockerfile \
+              -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+              --load \
+              .
 
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
