@@ -34,9 +34,13 @@ jobs:
       # Build da Imagem (Dockerfile em /app)
       # -------------------------
       - name: Build Docker image
-        run: docker buildx build -f app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} --load app
-
-
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -f app/Dockerfile \
+            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+            --load \
+            app
       # -------------------------
       # Push para o Docker Hub
       # -------------------------
@@ -81,4 +85,5 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
+
 
