@@ -34,11 +34,12 @@ jobs:
       # Build da Imagem (corrigido)
       # -------------------------
       - name: Build Docker image
-        run: docker buildx build \
-            --platform linux/amd64 \
-            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
-            --load \
-            .
+        run:  docker buildx build \
+              --platform linux/amd64 \
+              -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+              --load \
+              .
+
 
       # -------------------------
       # Push para o Docker Hub
@@ -84,4 +85,5 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
+
 
