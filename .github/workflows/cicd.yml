@@ -28,7 +28,7 @@ jobs:
       # Build da imagem
       # ---------------------
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} .
+        run: docker buildx build -t ${{ secrets.DOCKERHUB_USER }}/tasks-api:${{ github.sha }} .
 
       # ---------------------
       # Push para o Docker Hub
@@ -70,3 +70,4 @@ jobs:
             IMAGE_TAG=${{ github.sha }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
+
