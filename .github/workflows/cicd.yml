@@ -34,10 +34,12 @@ jobs:
       # Build da Imagem
       # -------------------------
       - name: Build Docker image
-        run: docker buildx build \
-          --platform linux/amd64 \
-          -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
-          --load .
+        run: |
+          docker buildx build \
+            --platform linux/amd64 \
+            -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} \
+            --load \
+            .
 
       # -------------------------
       # Push para o Docker Hub
