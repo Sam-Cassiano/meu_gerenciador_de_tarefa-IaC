@@ -31,11 +31,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # -------------------------
-      # Build da Imagem (CORRIGIDO)
+      # Build da Imagem (SEM ERROS)
       # -------------------------
       - name: Build Docker image
         run: docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} --load .
-
 
       # -------------------------
       # Push para o Docker Hub
@@ -76,9 +75,6 @@ jobs:
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
 
             # Subir serviços com nova imagem
-            IMAGE_TAG=${{ github.sha }} \
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            IMAGE_TAG=${{ github.sha }} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "🚀 Deploy finalizado!"
-
