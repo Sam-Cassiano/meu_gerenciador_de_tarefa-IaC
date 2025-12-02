@@ -22,9 +22,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        run: |
-          echo "🔨 Iniciando build da imagem Docker..."
-          docker buildx build --platform linux/amd64 -f app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} --load .
+        run: docker buildx build -f app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }} --platform linux/amd64 --load app
 
       - name: Push image to Docker Hub
         run: docker push ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${{ github.sha }}
