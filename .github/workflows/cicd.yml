@@ -48,11 +48,16 @@ jobs:
 
       - name: Terraform Init
         working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
         run: terraform init -reconfigure
 
       - name: Terraform Apply
         working-directory: ./terraform
         env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
           DO_TOKEN: ${{ secrets.DO_TOKEN }}
         run: terraform apply -auto-approve
 
@@ -86,7 +91,7 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.prod.yml"
-          target: "~/"
+          target: "~/" 
 
       - name: Deploy na VM
         uses: appleboy/ssh-action@v0.1.10
