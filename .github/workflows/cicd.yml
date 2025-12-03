@@ -38,4 +38,14 @@ jobs:
             docker compose -f docker-compose.prod.yml down || true
             docker compose -f docker-compose.prod.yml pull
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
-            echo "🚀 Deploy finalizado!"
+
+            echo "🔍 Verificando se os containers subiram corretamente..."
+            if docker compose -f docker-compose.prod.yml ps | grep Up; then
+              echo "✅ Todos os containers estão rodando!"
+            else
+              echo "❌ Algum container falhou ao subir. Verifique os logs:"
+              docker compose -f docker-compose.prod.yml logs --tail=50
+              exit 1
+            fi
+
+            echo "🚀 Deploy finalizado com sucesso!"
