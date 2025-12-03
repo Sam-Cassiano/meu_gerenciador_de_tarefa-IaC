@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,18 +17,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      
-
-      - name: Push Docker image
-        run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
-          IMAGE_TAG_SHA="${GITHUB_SHA}"
-          IMAGE_TAG_LATEST="latest"
-
-          echo "⬆️ Enviando imagens para Docker Hub..."
-          docker push $IMAGE_NAME:$IMAGE_TAG_SHA
-          docker push $IMAGE_NAME:$IMAGE_TAG_LATEST
 
       - name: Copy docker-compose.prod.yml to server
         uses: appleboy/scp-action@v0.1.4
@@ -69,4 +57,3 @@ jobs:
             fi
 
             echo "🎉 Deploy finalizado com sucesso!"
-
