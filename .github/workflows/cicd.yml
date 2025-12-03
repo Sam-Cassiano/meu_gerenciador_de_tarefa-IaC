@@ -69,7 +69,8 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform
         run: |
-           echo "do_token=\"${DO_TOKEN}\"" > terraform.tfvars
+          echo "do_token=\"${DO_TOKEN}\"" > terraform.tfvars
+          terraform apply -auto-approve
 
       - name: Capturar IP do Droplet
         id: get_ip
@@ -90,21 +91,6 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Login no Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Copiar docker-compose.prod.yml para o servidor
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ needs.provision-infra.outputs.droplet_ip }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "/root/"
-
       - name: Deploy na VM
         uses: appleboy/ssh-action@v0.1.10
         with:
@@ -112,16 +98,21 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "Realizando login no Docker Hub..."
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USER }}" --password-stdin
+
             echo "Parando containers antigos..."
             docker compose -f docker-compose.prod.yml down || true
 
-            echo "Baixando imagens mais recentes..."
-            export DOCKERHUB_USER=${{ secrets.DOCKERHUB_USER }}
-            export IMAGE_TAG=latest
-            export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            echo "Exportando variáveis do compose..."
+            export DOCKERHUB_USER="${{ secrets.DOCKERHUB_USER }}"
+            export IMAGE_TAG="latest"
+            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
+
+            echo "Baixando imagens..."
             docker compose -f docker-compose.prod.yml pull
 
-            echo "Subindo a aplicação..."
+            echo "Subindo containers..."
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             echo "Verificando status..."
@@ -130,10 +121,8 @@ jobs:
               echo "Todos os containers estão rodando!"
             else
               echo "Falha no deploy! Logs:"
-              docker compose -f docker-compose.prod.yml logs --tail=100
+              docker compose -f docker-compose.prod.yml logs --tail=200
               exit 1
             fi
 
             echo "Deploy concluído com sucesso!"
-
-
