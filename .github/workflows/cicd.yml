@@ -79,17 +79,15 @@ jobs:
           echo "ip=$IP" >> $GITHUB_OUTPUT
           echo "Droplet criado com IP: $IP"
 
-  # ----------------------------
+    # ----------------------------
   # Job de Deploy (CD)
   # ----------------------------
-  deploy:
+  deploy-app:
     name: Deploy Aplicação
     runs-on: ubuntu-latest
     needs: provision-infra
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
 
+    steps:
       - name: Deploy na VM
         uses: appleboy/ssh-action@v0.1.10
         with:
