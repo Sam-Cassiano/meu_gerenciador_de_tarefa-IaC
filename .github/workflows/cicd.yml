@@ -27,34 +27,15 @@ jobs:
           IMAGE_TAG_SHA="${GITHUB_SHA}"
           IMAGE_TAG_LATEST="latest"
 
+          if [ ! -f Dockerfile ]; then
+            echo "❌ Dockerfile não encontrado na raiz!"
+            exit 1
+          fi
+
           echo "🔨 Iniciando build e push da imagem Docker..."
           docker buildx build \
             --platform linux/amd64 \
-            -f Dockerfile \
             -t $IMAGE_NAME:$IMAGE_TAG_SHA \
             -t $IMAGE_NAME:$IMAGE_TAG_LATEST \
             --push \
             .
-
-      - name: Copy docker-compose.prod.yml to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml"
-          target: "~/"
-
-      - name: Deploy on server
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            echo "🚀 Atualizando deploy no servidor..."
-            cd ~/
-            docker compose -f docker-compose.prod.yml down || true
-            docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA}
-            IMAGE_TAG=${GITHUB_SHA} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
-            echo "✅ Deploy finalizado!"
