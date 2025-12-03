@@ -38,9 +38,9 @@ jobs:
       droplet_ip: ${{ steps.get_ip.outputs.ip }}
 
     env:
-      # Credenciais do Spaces (backend S3-compatible)
-      SPACES_ACCESS_KEY: ${{ secrets.DO_SPACES_KEY }}
-      SPACES_SECRET_KEY: ${{ secrets.DO_SPACES_SECRET }}
+      # Credenciais do Spaces (Terraform backend S3)
+      AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
       # Token da DigitalOcean (para criar Droplet, etc)
       DO_TOKEN: ${{ secrets.DO_TOKEN }}
 
@@ -51,7 +51,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.0  # versão estável mais recente em dez/2025
+          terraform_version: 1.9.0
 
       - name: Terraform Init
         working-directory: ./terraform
@@ -129,4 +129,3 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
- 
