@@ -21,30 +21,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build and push Docker image
         run: |
           IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
           IMAGE_TAG_SHA="${GITHUB_SHA}"
           IMAGE_TAG_LATEST="latest"
 
-          echo "🔨 Iniciando build da imagem Docker..."
+          echo "🔨 Iniciando build e push da imagem Docker..."
           docker buildx build \
             --platform linux/amd64 \
             -f Dockerfile \
             -t $IMAGE_NAME:$IMAGE_TAG_SHA \
             -t $IMAGE_NAME:$IMAGE_TAG_LATEST \
-            --load \
+            --push \
             .
-
-      - name: Push image to Docker Hub
-        run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
-          IMAGE_TAG_SHA="${GITHUB_SHA}"
-          IMAGE_TAG_LATEST="latest"
-
-          echo "📤 Enviando imagem para Docker Hub..."
-          docker push $IMAGE_NAME:$IMAGE_TAG_SHA
-          docker push $IMAGE_NAME:$IMAGE_TAG_LATEST
 
       - name: Copy docker-compose.prod.yml to server
         uses: appleboy/scp-action@v0.1.4
