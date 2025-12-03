@@ -18,14 +18,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
-        run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
-          IMAGE_TAG_SHA="${GITHUB_SHA}"
-          IMAGE_TAG_LATEST="latest"
-
-          echo "🔨 Iniciando build da imagem Docker..."
-          docker build -t $IMAGE_NAME:$IMAGE_TAG_SHA -t $IMAGE_NAME:$IMAGE_TAG_LATEST .
+      
 
       - name: Push Docker image
         run: |
@@ -76,3 +69,4 @@ jobs:
             fi
 
             echo "🎉 Deploy finalizado com sucesso!"
+
