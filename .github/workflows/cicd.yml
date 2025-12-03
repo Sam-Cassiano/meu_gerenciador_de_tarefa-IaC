@@ -56,7 +56,7 @@ jobs:
       - name: Terraform Apply
         working-directory: ./terraform
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY}}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
           DO_TOKEN: ${{ secrets.DO_TOKEN }}
         run: terraform apply -auto-approve
@@ -119,3 +119,4 @@ jobs:
             fi
 
             echo "🎉 Deploy finalizado com sucesso!"
+
