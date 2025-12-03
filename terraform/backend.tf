@@ -5,7 +5,7 @@ terraform {
     region = "us-east-1"
 
     endpoints = {
-      s3 = "https://nyc3.digitaloceanspaces.com"
+      s3 = "https://sfo3.digitaloceanspaces.com"
     }
 
     skip_credentials_validation = true
