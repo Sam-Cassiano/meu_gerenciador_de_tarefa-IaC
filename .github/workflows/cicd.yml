@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,28 +17,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
-        run: |
-          IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
-          IMAGE_TAG_SHA="${GITHUB_SHA}"
-          IMAGE_TAG_LATEST="latest"
-
-          if [ ! -f Dockerfile ]; then
-            echo "❌ Dockerfile não encontrado na raiz!"
-            exit 1
-          fi
-
-          echo "🔨 Iniciando build e push da imagem Docker..."
-          docker buildx build \
-            --platform linux/amd64 \
-            -t $IMAGE_NAME:$IMAGE_TAG_SHA \
-            -t $IMAGE_NAME:$IMAGE_TAG_LATEST \
-            --push \
-            .
 
       - name: Copy docker-compose.prod.yml to server
         uses: appleboy/scp-action@v0.1.4
@@ -56,9 +34,8 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "🚀 Atualizando deploy no servidor..."
             cd ~/
             docker compose -f docker-compose.prod.yml down || true
-            docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA}
-            IMAGE_TAG=${GITHUB_SHA} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
-            echo "✅ Deploy finalizado!"
+            docker compose -f docker-compose.prod.yml pull
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
+            echo "🚀 Deploy finalizado!"
