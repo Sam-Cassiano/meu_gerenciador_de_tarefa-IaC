@@ -70,6 +70,7 @@ jobs:
         working-directory: ./terraform
         run: |
           echo "do_token=\"${DO_TOKEN}\"" > terraform.tfvars
+          terraform apply -auto-approve
 
       - name: Capturar IP do Droplet
         id: get_ip
@@ -79,7 +80,7 @@ jobs:
           echo "ip=$IP" >> $GITHUB_OUTPUT
           echo "Droplet criado com IP: $IP"
 
-    # ----------------------------
+  # ----------------------------
   # Job de Deploy (CD)
   # ----------------------------
   deploy-app:
