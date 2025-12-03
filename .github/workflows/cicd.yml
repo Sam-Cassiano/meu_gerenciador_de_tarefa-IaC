@@ -35,17 +35,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/
+            echo "🛠 Parando containers antigos..."
             docker compose -f docker-compose.prod.yml down || true
-            docker compose -f docker-compose.prod.yml pull
+
+            echo "⬇️ Baixando imagens mais recentes..."
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml pull
+
+            echo "🚀 Subindo containers..."
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
 
-            echo "🔍 Verificando se os containers subiram corretamente..."
+            echo "🔍 Verificando status dos containers..."
             if docker compose -f docker-compose.prod.yml ps | grep Up; then
-              echo "✅ Todos os containers estão rodando!"
+              echo "✅ Todos os containers estão rodando corretamente!"
             else
-              echo "❌ Algum container falhou ao subir. Verifique os logs:"
+              echo "❌ Algum container falhou ao subir. Últimos 50 logs:"
               docker compose -f docker-compose.prod.yml logs --tail=50
               exit 1
             fi
 
-            echo "🚀 Deploy finalizado com sucesso!"
+            echo "🎉 Deploy finalizado com sucesso!"
