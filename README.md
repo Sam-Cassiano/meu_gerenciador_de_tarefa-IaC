@@ -1,120 +1,186 @@
-# Meu Gerenciador de Tarefas
+# 🚀 Task Manager API — FastAPI + CI/CD + IaC (Terraform)
 
-## Descrição
+Este projeto é uma **API de gerenciamento de tarefas (To-Do)** construída com **FastAPI**, usando:
 
-Aplicação de gerenciamento de tarefas construída com FastAPI, PostgreSQL e Docker. Este projeto possui pipeline de CI/CD configurado com GitHub Actions, que garante testes automáticos, build de imagens Docker e deploy automático no servidor de produção.
+- **CI/CD completo via GitHub Actions**
+- **Infraestrutura automatizada com Terraform**
+- **Deploy em Droplet DigitalOcean usando Docker Compose**
+- **Banco PostgreSQL em produção e SQLite para testes**
+- **Testes automatizados com PyTest**
 
----
-
-## Funcionalidades
-
-* Criar, ler, atualizar e deletar tarefas (CRUD).
-* Deploy automático via GitHub Actions no servidor remoto.
-* Multi-container: API + banco de dados PostgreSQL.
+Ele também demonstra como integrar **IaC + Docker + Pipelines** numa arquitetura real e fácil de estender.
 
 ---
 
-## Configuração do Servidor
+## 🌐 URLs da Aplicação
 
-Antes do deploy automático, é necessário configurar o servidor:
-
-1. Conectar via SSH ao servidor:
-
-```bash
-ssh root@138.197.195.201
-```
-
-2. Criar o diretório do projeto:
-
-```bash
-mkdir -p ~/meu_gerenciador_de_tarefas
-cd ~/meu_gerenciador_de_tarefas
-```
-
-3. Criar o arquivo `.env` com as variáveis de produção:
-
-```env
-DOCKERHUB_USER=sammmghj
-IMAGE_TAG=latest
-POSTGRES_PASSWORD=senha123
-```
-
-4. Certifique-se que Docker e Docker Compose estão instalados:
-
-```bash
-docker --version
-docker-compose --version
-```
+| Serviço | URL |
+|--------|------|
+| API (GET /tasks) | http://45.55.58.91:5000/tasks |
+| Swagger UI | http://45.55.58.91:5000/docs |
 
 ---
 
-## GitHub Actions (CI/CD)
+# 📂 Estrutura do Projeto
 
-O workflow `cicd.yml` automatiza o deploy e testes:
+app/
+├── main.py
+├── models.py
+├── schemas.py
+├── database.py
+└── routes/
+└── tasks.py
+terraform/
+├── backend.tf
+├── main.tf
+├── variables.tf
+├── outputs.tf
+tests/
+└── test_tasks.py
+docker-compose.prod.yml
+Dockerfile
+cicd.yml
+requirements.txt
 
-* **Disparador:** push na branch `main`.
-* **Etapas:**
-
-  1. Checkout do repositório.
-  2. Configuração do Python.
-  3. Instalação de dependências.
-  4. Execução de testes unitários (`pytest`).
-  5. Login no Docker Hub.
-  6. Build da imagem Docker.
-  7. Push da imagem para Docker Hub.
-  8. Deploy no servidor via SSH, atualizando os containers.
-
----
-
-## Secrets necessários no GitHub
-
-Para o deploy funcionar corretamente, configure os seguintes Secrets no repositório:
-
-| Nome do Secret    | Descrição                           |
-| ----------------- | ----------------------------------- |
-| `DOCKERHUB_USER`  | Usuário do Docker Hub               |
-| `DOCKERHUB_TOKEN` | Token/senha do Docker Hub           |
-| `SSH_HOST`        | IP ou hostname do servidor remoto   |
-| `SSH_USER`        | Usuário para conexão SSH            |
-| `SSH_KEY`         | Chave privada SSH para autenticação |
 
 ---
 
-## Testes
+# ⚙️ 1. API FastAPI
 
-Os testes unitários cobrem todas as rotas do CRUD:
+A API expõe endpoints CRUD para tarefas:
 
-```bash
-pytest
-```
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| POST | `/tasks/` | Criar tarefa |
+| GET | `/tasks/` | Listar tarefas |
+| GET | `/tasks/{id}` | Buscar tarefa |
+| PUT | `/tasks/{id}` | Atualizar |
+| DELETE | `/tasks/{id}` | Remover |
 
+### Modelo da Tarefa
+
+json
+{
+  "id": 1,
+  "title": "Minha tarefa",
+  "description": "Detalhes",
+  "completed": false
+}
 ---
 
-## Deploy
+🧪 2. Testes Automatizados (PyTest)
 
-Após o push na branch `main`, o workflow do GitHub Actions:
+Os testes usam SQLite temporário com override do banco principal.
 
-* Constrói a imagem Docker da aplicação.
-* Envia a imagem para o Docker Hub.
-* Atualiza automaticamente os containers no servidor de produção.
+Para rodar localmente:
 
-**URL da aplicação:**
+pytest -q
 
-```
-http://138.197.195.201:5000/tasks
-http://138.197.195.201:5000/docs#/
-```
+🐳 3. Deploy com Docker + Docker Compose
 
----
+O deploy em produção usa:
 
-## Badge de Status
+Dockerfile multi-stage
 
-Status do pipeline:
-![CI/CD](https://github.com/Sam-Cassiano/meu_gerenciador_de_tarefa/actions/workflows/cicd.yml/badge.svg)
+docker-compose.prod.yml
 
----
+4. Infraestrutura como Código (Terraform)
 
-## Observações
+Infraestrutura provisionada automaticamente:
 
-* O arquivo `.env` **não deve ser versionado**.
-* Sempre use SHA do commit como tag da imagem Docker em produção para versionamento seguro.
+Droplet DigitalOcean (Ubuntu 22.04)
+
+Instala Docker + Docker Compose via cloud-init
+
+Configuração do backend remoto (DO Spaces)
+
+cd terraform
+terraform init
+terraform apply
+terraform output
+
+🔁 5. Pipeline CI/CD (GitHub Actions)
+
+Arquivo: cicd.yml
+
+Fases da Pipeline
+1️⃣ Testes (CI)
+
+Instala dependências
+
+Executa PyTest
+
+Só continua se passar
+
+2️⃣ Provisionamento (IaC)
+
+Executa Terraform
+
+Cria/atualiza o Droplet
+
+Captura o IP de saída
+
+3️⃣ Deploy (CD)
+
+Conecta via SSH
+
+Login no DockerHub
+
+Recria containers
+
+Valida se subiu corretamente
+
+🔐 6. Variáveis e Secrets Necessários
+| Secret              | Descrição                      |
+| ------------------- | ------------------------------ |
+| `DO_TOKEN`          | Token da DigitalOcean          |
+| `DO_SPACES_KEY`     | Key do DO Spaces               |
+| `DO_SPACES_SECRET`  | Secret do DO Spaces            |
+| `SSH_PRIVATE_KEY`   | Chave privada cadastrada na DO |
+| `DOCKERHUB_USER`    | Usuário Docker Hub             |
+| `DOCKERHUB_TOKEN`   | Token Docker Hub               |
+| `POSTGRES_PASSWORD` | Senha do PostgreSQL            |
+
+
+🧱 Exemplos de Requisições
+Criar tarefa
+
+POST /tasks/
+{
+  "title": "Comprar pão",
+  "description": "Integral"
+}
+
+Atualizar tarefa
+
+PUT /tasks/1
+{
+  "title": "Comprar pão e leite",
+  "completed": true
+}
+
+🛠 Tecnologias Utilizadas
+
+FastAPI
+
+SQLAlchemy
+
+PostgreSQL / SQLite
+
+Docker & Docker Compose
+
+Terraform
+
+DigitalOcean
+
+GitHub Actions
+
+PyTest
+
+🎉 Conclusão
+
+Esse projeto demonstra um fluxo completo: código → testes → infraestrutura → deploy automático.
+
+
+
+
