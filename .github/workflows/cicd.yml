@@ -96,15 +96,18 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Realizando login no Docker Hub..."
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USER }}" --password-stdin
+            CLEAN_DH_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
+            CLEAN_DH_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
+
+            echo "$CLEAN_DH_TOKEN" | docker login -u "$CLEAN_DH_USER" --password-stdin
 
             echo "Parando containers antigos..."
             docker compose -f docker-compose.prod.yml down || true
 
-            echo "Exportando variáveis do compose..."
-            export DOCKERHUB_USER="${{secrets.DOCKERHUB_USER}}"
+            echo "Exportando variáveis..."
+            export DOCKERHUB_USER="$CLEAN_DH_USER"
             export IMAGE_TAG="latest"
-            export POSTGRES_PASSWORD="${{secrets.POSTGRES_PASSWORD}}"
+            export POSTGRES_PASSWORD="$(echo "${{ secrets.POSTGRES_PASSWORD }}" | tr -d '\n' | tr -d '\r')"
 
             echo "Baixando imagens..."
             docker compose -f docker-compose.prod.yml pull
@@ -123,4 +126,6 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
+
+
 
