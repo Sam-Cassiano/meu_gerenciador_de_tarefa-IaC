@@ -95,6 +95,11 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            export DOCKERHUB_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
+            export DOCKERHUB_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
+            export POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD }}" | tr -d '\n' | tr -d '\r')
+            export IMAGE_TAG="latest"
+
             echo "Realizando login no Docker Hub..."
             CLEAN_DH_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
             CLEAN_DH_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
@@ -126,6 +131,7 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
+
 
 
 
