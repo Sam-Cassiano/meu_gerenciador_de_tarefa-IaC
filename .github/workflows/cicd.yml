@@ -48,10 +48,10 @@ jobs:
 
       - name: Terraform Init
         working-directory: ./terraform
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
-        run: terraform init -reconfigure
+        run: |
+          terraform init -reconfigure \
+            -backend-config="access_key=${{ secrets.DO_SPACES_KEY }}" \
+            -backend-config="secret_key=${{ secrets.DO_SPACES_SECRET }}"
 
       - name: Terraform Apply
         working-directory: ./terraform
