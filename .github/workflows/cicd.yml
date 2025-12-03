@@ -21,18 +21,12 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Build usando Docker tradicional
-      - name: Build Docker image (simple)
-        run: docker build -f app/Dockerfile -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA} app/
-
-      # Build e push direto com buildx (multi-platform)
-      - name: Build and push Docker image (buildx)
+      - name: Build Docker image
         run: docker buildx build \
-              --platform linux/amd64 \
-              -f app/Dockerfile \
-              -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:latest \
-              --push \
-              app/
+           --platform linux/amd64 \
+           -t ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA} \
+           --load \
+          .
 
       - name: Copy docker-compose.prod.yml to server
         uses: appleboy/scp-action@v0.1.4
@@ -54,3 +48,4 @@ jobs:
             docker compose -f docker-compose.prod.yml down || true
             docker pull ${{ secrets.DOCKERHUB_USER }}/meu-gerenciador:${GITHUB_SHA}
             IMAGE_TAG=${GITHUB_SHA} POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml up -d --force-recreate
+
