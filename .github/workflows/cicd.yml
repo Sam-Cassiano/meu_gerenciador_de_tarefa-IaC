@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -37,32 +37,41 @@ jobs:
     outputs:
       droplet_ip: ${{ steps.get_ip.outputs.ip }}
 
+    env:
+      # Credenciais do Spaces (backend S3-compatible)
+      SPACES_ACCESS_KEY: ${{ secrets.DO_SPACES_KEY }}
+      SPACES_SECRET_KEY: ${{ secrets.DO_SPACES_SECRET }}
+      # Token da DigitalOcean (para criar Droplet, etc)
+      DO_TOKEN: ${{ secrets.DO_TOKEN }}
+
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.6.0
+          terraform_version: 1.9.0  # versão estável mais recente em dez/2025
 
       - name: Terraform Init
         working-directory: ./terraform
-        run: |
-          terraform init -reconfigure \
-            -backend-config="access_key=${{ secrets.DO_SPACES_KEY }}" \
-            -backend-config="secret_key=${{ secrets.DO_SPACES_SECRET }}"
+        run: terraform init -reconfigure
+
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
 
       - name: Terraform Apply
         working-directory: ./terraform
-        env:
-          DO_TOKEN: ${{ secrets.DO_TOKEN }}
         run: terraform apply -auto-approve
 
       - name: Capturar IP do Droplet
         id: get_ip
         working-directory: ./terraform
-        run: echo "ip=$(terraform output -raw server_ip)" >> $GITHUB_OUTPUT
+        run: |
+          IP=$(terraform output -raw server_ip)
+          echo "ip=$IP" >> $GITHUB_OUTPUT
+          echo "Droplet criado com IP: $IP"
 
   # ----------------------------
   # Job de Deploy (CD)
@@ -71,25 +80,24 @@ jobs:
     name: Deploy Aplicação
     runs-on: ubuntu-latest
     needs: provision-infra
-
     steps:
       - name: Checkout do código
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login no Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Copiar docker-compose.prod.yml para o servidor
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ needs.provision-infra.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-compose.prod.yml"
-          target: "~/"
+          target: "/root/"
 
       - name: Deploy na VM
         uses: appleboy/ssh-action@v0.1.10
@@ -98,22 +106,26 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "🛠 Parando containers antigos..."
+            echo "Parando containers antigos..."
             docker compose -f docker-compose.prod.yml down || true
 
-            echo "⬇️ Baixando imagens mais recentes..."
-            DOCKERHUB_USER=${{ secrets.DOCKERHUB_USER }} IMAGE_TAG=latest POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml pull
+            echo "Baixando imagens mais recentes..."
+            export DOCKERHUB_USER=${{ secrets.DOCKERHUB_USER }}
+            export IMAGE_TAG=latest
+            export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            docker compose -f docker-compose.prod.yml pull
 
-            echo "🚀 Subindo containers..."
+            echo "Subindo a aplicação..."
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
-            echo "🔍 Verificando status dos containers..."
-            if docker compose -f docker-compose.prod.yml ps | grep Up; then
-              echo "✅ Todos os containers estão rodando corretamente!"
+            echo "Verificando status..."
+            sleep 10
+            if docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+              echo "Todos os containers estão rodando!"
             else
-              echo "❌ Algum container falhou ao subir. Últimos 50 logs:"
-              docker compose -f docker-compose.prod.yml logs --tail=50
+              echo "Falha no deploy! Logs:"
+              docker compose -f docker-compose.prod.yml logs --tail=100
               exit 1
             fi
 
-            echo "🎉 Deploy finalizado com sucesso!"
+            echo "Deploy concluído com sucesso!"
