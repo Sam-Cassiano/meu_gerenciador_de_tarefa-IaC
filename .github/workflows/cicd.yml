@@ -57,7 +57,6 @@ jobs:
         run: |
           terraform init -reconfigure \
             -backend-config="region=us-east-1" \
-            -backend-config="endpoint=https://nyc3.digitaloceanspaces.com" \
             -backend-config="skip_credentials_validation=true" \
             -backend-config="skip_region_validation=true" \
             -backend-config="skip_metadata_api_check=true" \
@@ -135,3 +134,4 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
+
