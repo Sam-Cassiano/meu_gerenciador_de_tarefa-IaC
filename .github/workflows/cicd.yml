@@ -68,7 +68,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var "do_token=${DO_TOKEN}"
 
       - name: Capturar IP do Droplet
         id: get_ip
@@ -134,3 +134,4 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
+
