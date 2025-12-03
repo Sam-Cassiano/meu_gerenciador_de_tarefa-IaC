@@ -79,59 +79,37 @@ jobs:
           echo "ip=$IP" >> $GITHUB_OUTPUT
           echo "Droplet criado com IP: $IP"
 
-  # ----------------------------
-  # Job de Deploy (CD)
-  # ----------------------------
   deploy-app:
     name: Deploy Aplicação
     runs-on: ubuntu-latest
     needs: provision-infra
 
     steps:
-      - name: Deploy na VM
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ needs.provision-infra.outputs.droplet_ip }}
-          username: root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            export DOCKERHUB_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
-            export DOCKERHUB_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
-            export POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD }}" | tr -d '\n' | tr -d '\r')
-            export IMAGE_TAG="latest"
+    - name: Deploy na VM
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ needs.provision-infra.outputs.droplet_ip }}
+        username: root
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          export DOCKERHUB_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
+          export DOCKERHUB_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
+          export POSTGRES_PASSWORD=$(echo "${{ secrets.POSTGRES_PASSWORD }}" | tr -d '\n' | tr -d '\r')
+          export IMAGE_TAG="latest"
 
-            echo "Realizando login no Docker Hub..."
-            CLEAN_DH_USER=$(echo "${{ secrets.DOCKERHUB_USER }}" | tr -d '\n' | tr -d '\r')
-            CLEAN_DH_TOKEN=$(echo "${{ secrets.DOCKERHUB_TOKEN }}" | tr -d '\n' | tr -d '\r')
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
 
-            echo "$CLEAN_DH_TOKEN" | docker login -u "$CLEAN_DH_USER" --password-stdin
+          docker compose -f docker-compose.prod.yml down || true
 
-            echo "Parando containers antigos..."
-            docker compose -f docker-compose.prod.yml down || true
+          docker compose -f docker-compose.prod.yml pull
+          docker compose -f docker-compose.prod.yml up -d --force-recreate
 
-            echo "Exportando variáveis..."
-            export DOCKERHUB_USER="$CLEAN_DH_USER"
-            export IMAGE_TAG="latest"
-            export POSTGRES_PASSWORD="$(echo "${{ secrets.POSTGRES_PASSWORD }}" | tr -d '\n' | tr -d '\r')"
+          sleep 10
+          if docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
+            echo "Todos os containers estão rodando!"
+          else
+            docker compose -f docker-compose.prod.yml logs --tail=200
+            exit 1
+          fi
 
-            echo "Baixando imagens..."
-            docker compose -f docker-compose.prod.yml pull
-
-            echo "Subindo containers..."
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
-
-            echo "Verificando status..."
-            sleep 10
-            if docker compose -f docker-compose.prod.yml ps | grep -q "Up"; then
-              echo "Todos os containers estão rodando!"
-            else
-              echo "Falha no deploy! Logs:"
-              docker compose -f docker-compose.prod.yml logs --tail=200
-              exit 1
-            fi
-
-            echo "Deploy concluído com sucesso!"
-
-
-
-
+          echo "Deploy concluído com sucesso!"
