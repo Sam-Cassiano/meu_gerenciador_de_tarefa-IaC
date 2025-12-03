@@ -38,7 +38,6 @@ jobs:
           IMAGE_NAME="${{ secrets.DOCKERHUB_USER }}/meu-gerenciador"
           IMAGE_TAG_SHA="${GITHUB_SHA}"
           IMAGE_TAG_LATEST="latest"
-
           docker push $IMAGE_NAME:$IMAGE_TAG_SHA
           docker push $IMAGE_NAME:$IMAGE_TAG_LATEST
 
