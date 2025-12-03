@@ -40,7 +40,7 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_KEY }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET }}
-      AWS_EC2_METADATA_DISABLED: "true"        # <- ESSENCIAL
+      AWS_EC2_METADATA_DISABLED: "true"
       DO_TOKEN: ${{ secrets.DO_TOKEN }}
 
     steps:
@@ -52,7 +52,7 @@ jobs:
         with:
           terraform_version: 1.9.0
 
-      - name: Terraform Init (forçando backend DO Spaces)
+      - name: Terraform Init (DO Spaces)
         working-directory: ./terraform
         run: |
           terraform init -reconfigure \
@@ -134,4 +134,3 @@ jobs:
             fi
 
             echo "Deploy concluído com sucesso!"
-
