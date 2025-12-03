@@ -48,7 +48,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: ./terraform
-        run: terraform init
+        run: terraform init -reconfigure
 
       - name: Terraform Apply
         working-directory: ./terraform
@@ -59,7 +59,7 @@ jobs:
       - name: Capturar IP do Droplet
         id: get_ip
         working-directory: ./terraform
-        run: echo "::set-output name=ip::$(terraform output -raw droplet_ip)"
+        run: echo "ip=$(terraform output -raw server_ip)" >> $GITHUB_OUTPUT
 
   # ----------------------------
   # Job de Deploy (CD)
@@ -89,7 +89,7 @@ jobs:
           target: "~/"
 
       - name: Deploy na VM
-        uses: appleboy/ssh-action@0.1.10
+        uses: appleboy/ssh-action@v0.1.10
         with:
           host: ${{ needs.provision-infra.outputs.droplet_ip }}
           username: root
@@ -99,10 +99,7 @@ jobs:
             docker compose -f docker-compose.prod.yml down || true
 
             echo "⬇️ Baixando imagens mais recentes..."
-            export DOCKERHUB_USER=${{ secrets.DOCKERHUB_USER }}
-            export IMAGE_TAG=latest
-            export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            docker compose -f docker-compose.prod.yml pull
+            DOCKERHUB_USER=${{ secrets.DOCKERHUB_USER }} IMAGE_TAG=latest POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} docker compose -f docker-compose.prod.yml pull
 
             echo "🚀 Subindo containers..."
             docker compose -f docker-compose.prod.yml up -d --force-recreate
